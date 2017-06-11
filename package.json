@@ -1,0 +1,18 @@
+{
+  "name": "bitflyer",
+  "version": "1.0.0",
+  "description": "bitflyer",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^2.2.28",
+    "require": "^2.4.20"
+  },
+  "devDependencies": {
+    "pubnub": "^4.10.0"
+  }
+}
