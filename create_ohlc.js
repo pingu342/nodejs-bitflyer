@@ -2,6 +2,7 @@
 // ローソク足チャートを描くためのOHLCデータを作成する。
 // 約定データを事前にDBに取得しておかなければならない。
 //
+var Config = require('config');
 var MongoClient = require('mongodb').MongoClient
 , assert = require('assert');
 
@@ -14,7 +15,12 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	return; // invalid
 }
 
-var url = 'mongodb://localhost:27017/bitflyer';
+var url;
+if (Config.config.mongo_user && Config.config.mongo_pwd) {
+	url = 'mongodb://' + Config.config.mongo_user + ':' + Config.config.mongo_pwd + '@' + Config.config.mongo_host + ':' + Config.config.mongo_port + '/' + Config.config.mongo_db;
+} else {
+	url = 'mongodb://' + Config.config.mongo_host + ':' + Config.config.mongo_port + '/' + Config.config.mongo_db;
+}
 var market = 'lightning_executions_' + process.argv[2];
 var ohlcs = {	'300'   : null, //5分足
 				'900'   : null, //15分足

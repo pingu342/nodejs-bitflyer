@@ -1,6 +1,7 @@
 // 
 // 約定データをダウンロードしてDBへ保存する。
 //
+var Config = require('config');
 var MongoClient = require('mongodb').MongoClient
 , assert = require('assert');
 
@@ -13,7 +14,12 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	return; // invalid
 }
 
-var url = 'mongodb://localhost:27017/bitflyer';
+var url;
+if (Config.config.mongo_user && Config.config.mongo_pwd) {
+	url = 'mongodb://' + Config.config.mongo_user + ':' + Config.config.mongo_pwd + '@' + Config.config.mongo_host + ':' + Config.config.mongo_port + '/' + Config.config.mongo_db;
+} else {
+	url = 'mongodb://' + Config.config.mongo_host + ':' + Config.config.mongo_port + '/' + Config.config.mongo_db;
+}
 var market = 'lightning_executions_' + process.argv[2];
 var productCode = process.argv[2];
 

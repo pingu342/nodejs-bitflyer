@@ -1,6 +1,7 @@
 // 
 // DBの管理
 //
+var Config = require('config');
 var MongoClient = require('mongodb').MongoClient
 , assert = require('assert');
 
@@ -22,7 +23,12 @@ if (process.argv[3] === 'dropAll') {
 	return; // invalid
 }
 
-var url = 'mongodb://localhost:27017/bitflyer';
+var url;
+if (Config.config.mongo_user && Config.config.mongo_pwd) {
+	url = 'mongodb://' + Config.config.mongo_user + ':' + Config.config.mongo_pwd + '@' + Config.config.mongo_host + ':' + Config.config.mongo_port + '/' + Config.config.mongo_db;
+} else {
+	url = 'mongodb://' + Config.config.mongo_host + ':' + Config.config.mongo_port + '/' + Config.config.mongo_db;
+}
 var market = 'lightning_executions_' + process.argv[2];
 var collections = [
 	{'name' : market					, 'index' : {'id' : 1, 'exec_date' : 1}}, // 約定データ

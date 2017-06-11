@@ -1,0 +1,6 @@
+config:
+    mongo_host: "localhost"
+    mongo_port: 27017
+    mongo_db: "db name"
+    mongo_user: "username"
+    mongo_pwd: "password"
