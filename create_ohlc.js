@@ -45,8 +45,8 @@ var OHLCData = function (id, span, exec) {
 		this.high_price = exec.high_price;
 		this.low_price = exec.low_price;
 		this.close_price = exec.close_price;
-		this.exec_num = exec.exec_num;
-		this.volume = exec.volume;
+		this.volume_sell = exec.volume_sell;
+		this.volume_buy = exec.volume_buy;
 		this.open_date = exec.open_date;
 		this.open_exec_id = exec.open_exec_id;
 		this.close_exec_id = exec.close_exec_id;
@@ -57,8 +57,13 @@ var OHLCData = function (id, span, exec) {
 		this.high_price = exec.price;
 		this.low_price = exec.price;
 		this.close_price = exec.price;
-		this.exec_num = 1;
-		this.volume = exec.size;
+		if (exec.side === 'SELL') {
+			this.volume_sell = exec.size;
+			this.volume_buy = 0;
+		} else {
+			this.volume_sell = 0;
+			this.volume_buy = exec.size;
+		}
 		this.open_date = getOpenDate(exec, span);
 		this.open_exec_id = exec.id;
 		this.close_exec_id = exec.id;
@@ -103,7 +108,11 @@ var OHLC = function (id, span, exec) {
 		}
 		this.data.close_price = exec.price;
 		this.data.exec_num++;
-		this.data.volume += exec.size;
+		if (exec.side === 'SELL') {
+			this.data.volume_sell += exec.size;
+		} else {
+			this.data.volume_buy += exec.size;
+		}
 		this.data.close_exec_id = exec.id;
 		return true;
 	}

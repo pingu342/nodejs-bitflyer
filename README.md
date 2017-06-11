@@ -1,11 +1,11 @@
 # nodejs-bitflyer
-Download bitflyer executions data to mongodb.
+Download bitflyer executions data and create OHLC data.
 
 ## 概要
 
-bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取得しmongodbに保存する。
+bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取得してmongodbに保存します。
 
-ローソク足チャートを描くため、保存したmongodbからOHLCデータを作成してmongodbに保存する。
+ローソク足チャート用のOHLCデータを作成してmongodbに保存します。
 
 ## 実行環境
 
@@ -49,5 +49,96 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 			distmod: debian81
 			distarch: x86_64
 			target_arch: x86_64
+
+### 補足
+
+* メモリは2GBくらい必要っぽい。使っているのはほとんどmongodbだろう。
+
+
+## 実行
+
+* mongod を起動
+
+
+* dbを空っぽにする
+
+		$ node manage_db.js <product_code> dropAll
+		$ node manage_db.js <product_code> createIndex
+
+	`<product_code>`には`BTC_JPY`または`FX_BTC_JPY`を入れます。
+
+* 実行
+
+		$ forever start download_exec.js <product_code>
+		$ forever start create_ohlc.js <product_code>
+
+	DBが空っぽの場合は、最初の約定から順に処理します。現在に追いつくには2,3日かかります。
+
+	以前に実行されていて、DBに途中までのデータが残っている場合、そこから処理を再開します。
+
+* 停止
+
+		$ forever stop download_exec.js
+		$ forever stop create_ohlc.js
+
+	停止しても再開できますのでご安心を。
+
+
+# DB
+
+	$ mongo
+
+	> show dbs
+	admin     0.000GB
+	bitflyer  0.000GB
+	local     0.000GB
+
+	> show collections
+	lightning_executions_<product_code>
+	lightning_executions_<product_code>_BTC_JPYOHLC_300
+	lightning_executions_<product_code>_BTC_JPYOHLC_900
+	lightning_executions_<product_code>_BTC_JPYOHLC_1800
+	lightning_executions_<product_code>_BTC_JPYOHLC_3600
+	lightning_executions_<product_code>_BTC_JPYOHLC_21600
+	lightning_executions_<product_code>_BTC_JPYOHLC_43200
+	lightning_executions_<product_code>_BTC_JPYOHLC_86400
+
+`<product_code>`には`BTC_JPY`または`FX_BTC_JPY`が入ります。
+
+コレクションは上から順に、約定データ、OHLCデータ(5分足,15分足,...)です。
+
+BTC_JPYの約定データを見てみます。
+
+	> db.lightning_executions_BTC_JPY.find()
+	{ "_id" : ObjectId("593cb89b7ecc67e89da86c41"), "id" : 1, "side" : "SELL", "price" : 30195, "size" : 0.01, "exec_date" : ISODate("2015-06-24T05:58:48.773Z"), "buy_child_order_acceptance_id" : "4b76790b", "sell_child_order_acceptance_id" : "3075b6ed" }
+
+これはbitflyer lightning APIが返したデータそのものです。
+
+次にBTC_JPYのOHLCデータ(1時間足)を見てみます。
+
+	> db.lightning_executions_BTC_JPY_OHLC_3600.find()
+	{ "_id" : ObjectId("593cc26df8a789e90c1b687b"), "id" : 1, "open_price" : 30195, "high_price" : 30195, "low_price" : 30195, "close_price" : 30195, "volume_sell" : 0.01, "volume_buy" : 0, "open_date" : ISODate("2015-06-24T05:00:00Z"), "open_exec_id" : 1, "close_exec_id" : 1 }
+
+* open_price : 始値
+* high_price : 上ヒゲ
+* low_price : 下ヒゲ
+* close_price : 終値
+* volume_sell : 出来高(売り)
+* volume_buy : 出来高(買い)
+* open_date : 日時
+* open_exec_id : 始値をつけた約定データのid
+* close_exec_id : 終値をつけた約定データのid
+
+# ローソク足チャートを描く
+
+このプロジェクトの`test`フォルダにサンプルが入っています。
+
+* `candle_chart.ipynb`
+	
+	pythonのサンプルです。
+
+	ファイルはjupyter notebookの形式です。
+
+	DBからOHLCデータを読み出し、matplotlibを利用してローソク足チャートを描きます。
 
 
