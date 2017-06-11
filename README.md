@@ -20,7 +20,9 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 * npm list
 
 		bitflyer@1.0.0
+		├── config@1.26.1
 		├── forever@0.15.3
+		├── js-yaml@3.8.4
 		├── mongodb@2.2.28
 		├── pubnub@4.10.0
 		├── request@2.81.0
@@ -57,7 +59,7 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 
 ## 実行
 
-* node.js mongodbをセットアップ
+* node.js, mongodbをセットアップ
 
 
 * このリポジトリをclone
@@ -69,7 +71,18 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 
 		$ cd nodejs-bitflyer
 		$ npm install
-		$ npm install forever -g
+		$ npm install -g forever
+
+
+* configファイルを修正
+
+		$ vim config/default.yaml
+
+	* mongo_host
+	* mongo_port
+	* mongo_db : 使用するDBの名前
+	* mongo_user : 認証なしの場合は行ごと削除
+	* mongo_pwd : 同上
 
 
 * dbを空っぽにする
