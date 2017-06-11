@@ -57,7 +57,19 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 
 ## 実行
 
-* mongod を起動
+* node.js mongodbをセットアップ
+
+
+* このリポジトリをclone
+
+		$ git clone <this_repository>
+
+
+* node.jsのパッケージをインストール
+
+		$ cd nodejs-bitflyer
+		$ npm install
+		$ npm install forever -g
 
 
 * dbを空っぽにする
