@@ -156,7 +156,7 @@ var findFromDB = function(db, callback) {
 					// 最も古い約定データまで遡る必要がある
 					smallExecId = 0;
 				} else {
-					ohlcs[span] = new OHLC(0, 0, doc);
+					ohlcs[span] = new OHLC(0, span, doc);
 					if (smallExecId > doc.close_exec_id) {
 						// DB内に、smallExecId以前の約定データに対応したOHLCデータが作られているので、
 						// smallExecId+1 の約定データに遡ればよい
