@@ -55,6 +55,7 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 ### 補足
 
 * メモリは2GBくらい必要っぽい。使っているのはほとんどmongodbだろう。
+* ストレージは、〜2017/5までのデータ記録に8GBが必要。
 
 
 ## 実行
@@ -154,16 +155,27 @@ BTC_JPYの約定データを見てみます。
 * open_exec_id : 始値をつけた約定データのid
 * close_exec_id : 終値をつけた約定データのid
 
-# ローソク足チャートを描く
+# データのチェック
 
-このプロジェクトの`test`フォルダにサンプルが入っています。
-
-* `candle_chart.ipynb`
+* `test/check_data.ipynb`
 	
 	pythonのサンプルです。
-
+	
 	ファイルはjupyter notebookの形式です。
+	
+	データの重複や欠落をチェックします。
 
+	（bitflyer lightning APIで取ってきた約定データにもともと欠落があります）
+
+
+# ローソク足チャートを描く
+
+* `test/candle_chart.ipynb`
+	
+	pythonのサンプルです。
+	
+	ファイルはjupyter notebookの形式です。
+	
 	DBからOHLCデータを読み出し、matplotlibを利用してローソク足チャートを描きます。
 
 
