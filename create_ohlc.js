@@ -113,7 +113,6 @@ var OHLC = function (id, span, exec) {
 			this.data.low_price = exec.price;
 		}
 		this.data.close_price = exec.price;
-		this.data.exec_num++;
 		if (exec.side === 'SELL') {
 			this.data.volume_sell += exec.size;
 		} else {
