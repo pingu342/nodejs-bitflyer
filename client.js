@@ -1,6 +1,7 @@
 //
 // OHLCデータ配信サーバーのテスト用のクライアント
 //
+var Config = require('config');
 
 if (process.argv[2] === 'FX_BTC_JPY') {
 	; // valid
@@ -33,9 +34,13 @@ if (!span) {
 }
 
 var market = process.argv[2];
+var namespace = '/' + market + '_OHLC';
 var code = market + '_OHLC_' + span;
 var requireOldData = true;
-var socket = require('socket.io-client')('http://localhost:8080/' + market);
+var server_url = 'http://localhost:' + Config.config.server_port + namespace;
+var socket = require('socket.io-client')(server_url);
+
+console.log('[CONN] ' + server_url);
 
 socket.on('connect', function() {
 

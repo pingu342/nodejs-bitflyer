@@ -55,17 +55,21 @@ var checkRequest = function(span) {
 	return false;
 }
 
+console.log('[LISTEN] port:' + Config.config.server_port);
+
 var io = require('socket.io')(Config.config.server_port);
 
 var Server = function (market) {
 
-	var ns = io.of('/' + market).on('connection', function (socket) {
-		console.log('[CONN] /' + market);
+	var namespace = '/' + market + '_OHLC';
+
+	var ns = io.of(namespace).on('connection', function (socket) {
+		console.log('[CONN] ' + namespace);
 
 		socket.on('req', function(obj){
 
 			// クライアントから要求を受信
-			console.log('[RECV REQ] /' + market + ' span:' + obj.span + ' before:' + obj.before);
+			console.log('[RECV REQ] ' + namespace + ' span:' + obj.span + ' before:' + obj.before);
 
 			if (checkRequest(obj.span)) {
 				sendOldOHLC(getCodeName(market, obj.span), obj.before, 100, socket);
@@ -75,7 +79,7 @@ var Server = function (market) {
 		socket.on('join', function(obj) {
 
 			// クライアントから要求を受信
-			console.log('[RECV JOIN] /' + market + ' span:' + obj.span);
+			console.log('[RECV JOIN] ' + namespace + ' span:' + obj.span);
 
 			if (checkRequest(obj.span)) {
 				socket.join(getCodeName(market, obj.span));
@@ -85,7 +89,7 @@ var Server = function (market) {
 		});
 
 		socket.on('disconnect', function (socket) {
-			console.log('[DICONN] /' + market);
+			console.log('[DISCONN] ' + namespace);
 		});
 
 	});
@@ -131,10 +135,10 @@ var Server = function (market) {
 
 				// iteration callback
 
-				if (last.id == doc.id && last.close_exec_id == doc.close_exec_id) {
-					// 未更新なら送信不要
-					return;
-				}
+				//if (last.id == doc.id && last.close_exec_id == doc.close_exec_id) {
+				//	// 未更新なら送信不要
+				//	return;
+				//}
 
 				ns.to(code).emit(code, doc);
 
