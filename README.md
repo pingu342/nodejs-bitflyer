@@ -1,11 +1,16 @@
 # nodejs-bitflyer
 Download bitflyer executions data and create OHLC data.
 
+Deliver OHLC data by SocketIO.
+
 ## 概要
 
 bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取得してmongodbに保存します。
 
 ローソク足チャート用のOHLCデータを作成してmongodbに保存します。
+
+OHLCデータをSocketIOで配信します。
+
 
 ## 実行環境
 
@@ -26,7 +31,8 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 		├── mongodb@2.2.28
 		├── pubnub@4.10.0
 		├── request@2.81.0
-		└── require@2.4.20
+		├── require@2.4.20
+		└── socketio@1.0.0
 
 * mongod --version
 
@@ -79,11 +85,12 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 
 		$ vim config/default.yaml
 
-	* mongo_host
-	* mongo_port
+	* mongo_host : mongodのサーバー名
+	* mongo_port : mongodのポート番号
 	* mongo_db : 使用するDBの名前
 	* mongo_user : 認証なしの場合は行ごと削除
 	* mongo_pwd : 同上
+	* server_port : OHLCデータ配信サーバーのポート番号
 
 
 * dbを空っぽにする
@@ -95,17 +102,25 @@ bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPYの約定データを取
 
 * 実行
 
+	約定データをダウンロードします。
+	
 		$ forever start download_exec.js <product_code>
+	
+	OHLCデータを生成します。
+
 		$ forever start create_ohlc.js <product_code>
 
 	DBが空っぽの場合は、最初の約定から順に処理します。現在に追いつくには2,3日かかります。
 
 	以前に実行されていて、DBに途中までのデータが残っている場合、そこから処理を再開します。
+	
+	最後に、OHLCデータを配信します。
+
+		$ forever start server.js
 
 * 停止
 
-		$ forever stop download_exec.js
-		$ forever stop create_ohlc.js
+		$ forever stopall
 
 	停止しても再開できますのでご安心を。
 
