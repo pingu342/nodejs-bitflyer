@@ -72,13 +72,25 @@ var Server = function (market) {
 
 		socket.on('join', function(obj) {
 
-			// クライアントから要求を受信
+			// クライアントからJOINを受信
 			console.log('[RECV JOIN] ' + market + '_OHLC_' + obj.span);
 
 			if (checkRequest(obj.span)) {
 				socket.join(obj.span);
 			} else {
 				console.log('[FAIL JOIN]');
+			}
+		});
+
+		socket.on('leave', function(obj) {
+
+			// クライアントからLEAVEを受信
+			console.log('[RECV LEAVE] ' + market + '_OHLC_' + obj.span);
+
+			if (checkRequest(obj.span)) {
+				socket.leave(obj.span);
+			} else {
+				console.log('[FAIL LEAVE]');
 			}
 		});
 
