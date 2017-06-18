@@ -97,6 +97,7 @@ var Server = function (market) {
 			assert.equal(null, err);
 
 			var collection = db.collection(getCollectionName(market, span));
+			var oldestId = Number.MAX_VALUE;
 
 			collection.find({'id':{'$lt':before}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
 
@@ -104,10 +105,15 @@ var Server = function (market) {
 
 				client.emit(span, doc);
 
+				if (oldestId > doc.id) {
+					oldestId = doc.id;
+				}
+
 			}, function (err) {
 
 				// end callback
 
+				client.emit('rsp', {'span':span, 'before':before, 'after':(oldestId-1), 'msg':'Requested data was sent.'});
 				db.close();
 
 			});
