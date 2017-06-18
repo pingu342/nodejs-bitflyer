@@ -32,7 +32,7 @@ var ohlcs = {	'300'   : null, //5分足
 // コレクション名を返す
 //
 var getCollectionName = function(market, span) {
-	return 'lightning_executions_' market + '_OHLC_' + span;
+	return 'lightning_executions_' + market + '_OHLC_' + span;
 }
 
 //
