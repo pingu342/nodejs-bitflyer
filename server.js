@@ -1,8 +1,9 @@
 //
 // OHLCデータの配信サーバー
 //
-// JOINしたクライアントに対して、
-//  - JOIN時点での最新データを配信
+// OHLCデータの足の長さ(span)ごとにroomを提供
+// roomにJOINしたクライアントに対して、
+//  - JOIN時点での最新のOHLCデータを配信
 //  - 以降は定期的に、前回送信したデータからの更新データを配信
 // 
 // またクライアントからの要求に応じて過去データを配信
@@ -30,15 +31,8 @@ var ohlcs = {	'300'   : null, //5分足
 //
 // コレクション名を返す
 //
-var getCollectionName = function(code) {
-	return 'lightning_executions_' + code;
-}
-
-//
-// コード名を返す
-//
-var getCodeName = function(market, span) {
-	return market + '_OHLC_' + span;
+var getCollectionName = function(market, span) {
+	return 'lightning_executions_' market + '_OHLC_' + span;
 }
 
 //
@@ -69,20 +63,20 @@ var Server = function (market) {
 		socket.on('req', function(obj){
 
 			// クライアントから要求を受信
-			console.log('[RECV REQ] ' + namespace + ' span:' + obj.span + ' before:' + obj.before);
+			console.log('[RECV REQ] ' + market + '_OHLC_' + obj.span + ' before:' + obj.before);
 
 			if (checkRequest(obj.span)) {
-				sendOldOHLC(getCodeName(market, obj.span), obj.before, 100, socket);
+				sendOldOHLC(span, obj.before, 100, socket);
 			}
 		});
 
 		socket.on('join', function(obj) {
 
 			// クライアントから要求を受信
-			console.log('[RECV JOIN] ' + namespace + ' span:' + obj.span);
+			console.log('[RECV JOIN] ' + market + '_OHLC_' + obj.span);
 
 			if (checkRequest(obj.span)) {
-				socket.join(getCodeName(market, obj.span));
+				socket.join(obj.span);
 			} else {
 				console.log('[FAIL JOIN]');
 			}
@@ -95,20 +89,20 @@ var Server = function (market) {
 	});
 
 	//
-	// idより前(idは含まない)の古いOHLCデータをlimit件だけclientへ送信
+	// idより前(idは含まない)の古い、span足のOHLCデータをlimit件だけ、clientへ送信
 	//
-	var sendOldOHLC = function(code, before, limit, client) {
+	var sendOldOHLC = function(span, before, limit, client) {
 
 		MongoClient.connect(url, function(err, db) {
 			assert.equal(null, err);
 
-			var collection = db.collection(getCollectionName(code));
+			var collection = db.collection(getCollectionName(market, span));
 
 			collection.find({'id':{'$lt':before}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
 
 				// iteration callback
 
-				client.emit(code, doc);
+				client.emit(span, doc);
 
 			}, function (err) {
 
@@ -122,14 +116,14 @@ var Server = function (market) {
 	};
 
 	//
-	// lastより新しいOHLCデータすべてを全クライアントへ送信
+	// lastより新しいspan足のOHLCデータすべてを、spanにJOINした全クライアントへ送信
 	//
-	var sendUpdatedOHLC = function(code, last) {
+	var sendUpdatedOHLC = function(span, last) {
 
 		MongoClient.connect(url, function(err, db) {
 			assert.equal(null, err);
 
-			var collection = db.collection(getCollectionName(code));
+			var collection = db.collection(getCollectionName(market, span));
 
 			collection.find({'id':{'$gte':last.id}}).sort([['id',1]]).forEach(function (doc) {
 
@@ -140,7 +134,7 @@ var Server = function (market) {
 				//	return;
 				//}
 
-				ns.to(code).emit(code, doc);
+				ns.to(span).emit(span, doc);
 
 				last = doc;
 
@@ -148,7 +142,7 @@ var Server = function (market) {
 
 				// end callback
 
-				setTimeout(sendUpdatedOHLC, 1000, code, last);
+				setTimeout(sendUpdatedOHLC, 1000, span, last);
 				db.close();
 
 			});
@@ -157,20 +151,20 @@ var Server = function (market) {
 	};
 
 	//
-	// 最新のOHLCデータを1つだけ全クライアントへ送信
+	// 最新のspan足のOHLCデータを1つだけ、spanにJOINした全クライアントへ送信
 	//
-	var sendLatestOHLC = function(code) {
+	var sendLatestOHLC = function(span) {
 
 		MongoClient.connect(url, function(err, db) {
 			assert.equal(null, err);
 
-			var collection = db.collection(getCollectionName(code));
+			var collection = db.collection(getCollectionName(market, span));
 
 			collection.find().sort([['id',-1]]).limit(1).forEach(function (doc) {
 
-				ns.to(code).emit(code, doc);
+				ns.to(span).emit(span, doc);
 
-				setTimeout(sendUpdatedOHLC, 1000, code, doc);
+				setTimeout(sendUpdatedOHLC, 1000, span, doc);
 				db.close();
 
 			});
@@ -178,11 +172,13 @@ var Server = function (market) {
 		});
 	};
 
+	//
+	// 配信開始
+	//
 	this.start = function () {
-		for (var key in ohlcs) {
-			var code = getCodeName(market, key);
-			console.log('[START] ' + code);
-			sendLatestOHLC(code);
+		for (var span in ohlcs) {
+			console.log('[START] ' + market + '_OHLC_' + span);
+			sendLatestOHLC(span);
 		}
 	}
 

@@ -35,20 +35,19 @@ if (!span) {
 
 var market = process.argv[2];
 var namespace = '/' + market + '_OHLC';
-var code = market + '_OHLC_' + span;
 var requireOldData = true;
-var server_url = 'http://localhost:' + Config.config.server_port + namespace;
+var server_url = 'http://ec2-54-250-245-71.ap-northeast-1.compute.amazonaws.com:' + Config.config.server_port + namespace;
 var socket = require('socket.io-client')(server_url);
 
 console.log('[CONN] ' + server_url);
 
 socket.on('connect', function() {
 
-	console.log('[JOIN] ' + code);
+	console.log('[JOIN] ' + span);
 	socket.emit('join', {span:span});
 });
 
-socket.on(code, function(data) {
+socket.on(span, function(data) {
 
 	// JOIN後の最初のイベントでは、JOIN時点でのサーバ側での最新データ(1件以上)を受信できる
 	// 以降は定期的に、前回受信したデータからの更新データ(1件以上)を受信できる
@@ -69,7 +68,7 @@ socket.on(code, function(data) {
 	} else {
 		smallId = data.id;
 	}
-	console.log('[REQ] ' + code + ' before:' + smallId);
+	console.log('[REQ] before:' + smallId);
 	socket.emit('req', {span:span, before:smallId});
 	requireOldData = false;
 });
