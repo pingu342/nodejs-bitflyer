@@ -14,9 +14,18 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	return; // invalid
 }
 
-if (process.argv[3] === 'dropAll') {
+if (process.argv[3] === 'ALL') {
 	; // valid
-} else if (process.argv[3] === 'createIndex') {
+} else if (process.argv[3] === 'OHLC') {
+	; // valid
+} else {
+	console.log('range error.');
+	return; // invalid
+}
+
+if (process.argv[4] === 'drop') {
+	; // valid
+} else if (process.argv[4] === 'createIndex') {
 	; // valid
 } else {
 	console.log('command error.');
@@ -40,14 +49,20 @@ var collections = [
 	{'name' : (market + '_OHLC_43200')	, 'index' : {'id' : 1, 'open_date' : 1}}, // OHLCデータ(12時間足)
 	{'name' : (market + '_OHLC_86400')	, 'index' : {'id' : 1, 'open_date' : 1}}  // OHLCデータ(24時間足)
 ];
-var command = process.argv[3];
+var skip;
+if (process.argv[3] === 'ALL') {
+	skip = 0;
+} else if (process.argv[3] === 'OHLC') {
+	skip = 1;
+}
+var command = process.argv[4];
 
-if (command === 'dropAll') {
+if (command === 'drop') {
 
 	MongoClient.connect(url, function(err, db) {
 		assert.equal(null, err);
 
-		for (var i=0, n=0, len=collections.length; i<len; i++) {
+		for (var i=skip, n=0, len=collections.length; i<len; i++) {
 			(function (name) {
 				var collection = db.collection(name);
 				collection.drop(function(err, result) {
@@ -57,7 +72,7 @@ if (command === 'dropAll') {
 						console.log('db.' + name + '.drop()' + ' : ' + result);
 					}
 					n++;
-					if (n == collections.length) {
+					if (n == (collections.length - skip)) {
 						db.close();
 					}
 				});
@@ -71,7 +86,7 @@ if (command === 'dropAll') {
 	MongoClient.connect(url, function(err, db) {
 		assert.equal(null, err);
 
-		for (var i=0, n=0, len=collections.length; i<len; i++) {
+		for (var i=skip, n=0, len=collections.length; i<len; i++) {
 			(function (name, index) {
 				var collection = db.collection(name);
 				collection.createIndex(index, function(err, result) {
@@ -81,7 +96,7 @@ if (command === 'dropAll') {
 						console.log('db.' + name + '.createIndex()' + ' : ' + result);
 					}
 					n++;
-					if (n == collections.length) {
+					if (n == (collections.length - skip)) {
 						db.close();
 					}
 				});
