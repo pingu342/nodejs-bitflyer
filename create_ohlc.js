@@ -93,7 +93,7 @@ var OHLC = function (id, span, exec) {
 	}
 
 	this.span = span;
-	this.data = new OHLCData(id, span, exec);
+	this.data = new OHLCData(id, exec);
 	this.closeUnixTime = getCloseUnixTime(this.data.op_date, span);
 
 	this.check = function (exec) {
