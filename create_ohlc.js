@@ -43,7 +43,7 @@ var getCloseUnixTime = function(openDate, span) {
 	return unixTime;
 }
 
-var OHLCData = function (id, span, exec) {
+var OHLCData = function (id, exec) {
 
 	if (exec.hasOwnProperty('op')) {
 		// DBから取得したOHLCデータを使ってインスタンスを初期化
@@ -122,6 +122,7 @@ var OHLC = function (id, span, exec) {
 			this.data.vol_buy += exec.size;
 		}
 		this.data.cl_exec_id = exec.id;
+		this.data.cl_date = new Date(exec.exec_date);
 		return true;
 	}
 }
