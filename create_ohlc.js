@@ -36,43 +36,46 @@ var getCollectionName = function(span) {
 	return market + '_OHLC_' + span;
 }
 
-var getOpenDate = function(exec, span) {
-	var unixTime = Date.parse(exec.exec_date);
+var getCloseUnixTime = function(openDate, span) {
+	var unixTime = openDate.getTime();
 	unixTime -= (unixTime % (parseInt(span) * 1000));
-	return new Date(unixTime);
+	unixTime += (parseInt(span) * 1000);
+	return unixTime;
 }
 
 var OHLCData = function (id, span, exec) {
 
-	if (exec.hasOwnProperty('open_price')) {
+	if (exec.hasOwnProperty('op')) {
 		// DBから取得したOHLCデータを使ってインスタンスを初期化
 		this.id = exec.id;
-		this.open_price = exec.open_price;
-		this.high_price = exec.high_price;
-		this.low_price = exec.low_price;
-		this.close_price = exec.close_price;
-		this.volume_sell = exec.volume_sell;
-		this.volume_buy = exec.volume_buy;
-		this.open_date = exec.open_date;
-		this.open_exec_id = exec.open_exec_id;
-		this.close_exec_id = exec.close_exec_id;
+		this.op = exec.op;
+		this.hi = exec.hi;
+		this.lo = exec.lo;
+		this.cl = exec.cl;
+		this.vol_sell = exec.vol_sell;
+		this.vol_buy = exec.vol_buy;
+		this.op_date = exec.op_date;
+		this.cl_date = exec.cl_date;
+		this.op_exec_id = exec.op_exec_id;
+		this.cl_exec_id = exec.cl_exec_id;
 	} else {
 		// DBから取得した約定データを使ってインスタンスを初期化
 		this.id = id;
-		this.open_price = exec.price;
-		this.high_price = exec.price;
-		this.low_price = exec.price;
-		this.close_price = exec.price;
+		this.op = exec.price;
+		this.hi = exec.price;
+		this.lo = exec.price;
+		this.cl = exec.price;
 		if (exec.side === 'SELL') {
-			this.volume_sell = exec.size;
-			this.volume_buy = 0;
+			this.vol_sell = exec.size;
+			this.vol_buy = 0;
 		} else {
-			this.volume_sell = 0;
-			this.volume_buy = exec.size;
+			this.vol_sell = 0;
+			this.vol_buy = exec.size;
 		}
-		this.open_date = getOpenDate(exec, span);
-		this.open_exec_id = exec.id;
-		this.close_exec_id = exec.id;
+		this.op_date = new Date(exec.exec_date);
+		this.cl_date = new Date(exec.exec_date);
+		this.op_exec_id = exec.id;
+		this.cl_exec_id = exec.id;
 	}
 
 }
@@ -85,16 +88,16 @@ var OHLC = function (id, span, exec) {
 	this.notyetInserted = true; //未だDBに挿入されてなければtrue
 	this.inQueue = false; //DBへの書き込みキューの中に居ればtrue
 	
-	if (exec.hasOwnProperty('open_price')) {
+	if (exec.hasOwnProperty('op')) {
 		this.notyetInserted = false;
 	}
 
 	this.span = span;
 	this.data = new OHLCData(id, span, exec);
-	this.closeUnixTime = this.data.open_date.getTime() + (parseInt(span) * 1000);
+	this.closeUnixTime = getCloseUnixTime(this.data.op_date, span);
 
 	this.check = function (exec) {
-		if (this.data.close_exec_id >= exec.id) {
+		if (this.data.cl_exec_id >= exec.id) {
 			// 古い約定データなのでupdate()への入力禁止
 			return false;
 		}
@@ -106,19 +109,19 @@ var OHLC = function (id, span, exec) {
 			// 次のローソク足に使うべき約定データ
 			return false;
 		}
-		if (this.data.high_price < exec.price) {
-			this.data.high_price = exec.price;
+		if (this.data.hi < exec.price) {
+			this.data.hi = exec.price;
 		}
-		if (this.data.low_price > exec.price) {
-			this.data.low_price = exec.price;
+		if (this.data.lo > exec.price) {
+			this.data.lo = exec.price;
 		}
-		this.data.close_price = exec.price;
+		this.data.cl = exec.price;
 		if (exec.side === 'SELL') {
-			this.data.volume_sell += exec.size;
+			this.data.vol_sell += exec.size;
 		} else {
-			this.data.volume_buy += exec.size;
+			this.data.vol_buy += exec.size;
 		}
-		this.data.close_exec_id = exec.id;
+		this.data.cl_exec_id = exec.id;
 		return true;
 	}
 }
@@ -142,7 +145,7 @@ var findFromDB = function(db, callback) {
 
 	var keys = Object.keys(ohlcs);
 	var n = 0;
-	var smallExecId = Number.MAX_VALUE;
+	var minExecId = Number.MAX_VALUE;
 
 	for (var span in ohlcs) {
 		(function (span) {
@@ -154,19 +157,19 @@ var findFromDB = function(db, callback) {
 				if (!doc) {
 					// DB内に、このスパンのOHLCデータが1つも作られていないので、
 					// 最も古い約定データまで遡る必要がある
-					smallExecId = 0;
+					minExecId = 0;
 				} else {
 					ohlcs[span] = new OHLC(0, span, doc);
-					if (smallExecId > doc.close_exec_id) {
-						// DB内に、smallExecId以前の約定データに対応したOHLCデータが作られているので、
-						// smallExecId+1 の約定データに遡ればよい
-						smallExecId = doc.close_exec_id;
+					if (minExecId > doc.cl_exec_id) {
+						// DB内に、minExecId以前の約定データに対応したOHLCデータが作られているので、
+						// minExecId+1 の約定データに遡ればよい
+						minExecId = doc.cl_exec_id;
 					}
 				}
 				n++;
 				if (n == keys.length) {
 					// すべのてスパンのコレクションを読み込み終えた
-					execId = smallExecId + 1;
+					execId = minExecId + 1;
 					callback();
 				}
 			});
