@@ -192,9 +192,9 @@ MongoClient.connect(url, function(err, db) {
 			var count = 0;
 			var queue = [];
 
-			// 0.1秒毎に10件の約定データを処理
+			// 0.1秒毎に100件の約定データを処理
 			console.log('FIND: {execution_id:{$gte:' + after + '}}');
-			collection.find({'id' : {'$gte' : after}}).sort([['id',1]]).limit(10).forEach(function (doc) {
+			collection.find({'id' : {'$gte' : after}}).sort([['id',1]]).limit(100).forEach(function (doc) {
 				console.log('[' + doc.id + '] ' + doc.exec_date);
 				after = doc.id + 1;
 				count++;
