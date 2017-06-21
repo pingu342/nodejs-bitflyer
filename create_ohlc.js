@@ -129,14 +129,14 @@ var OHLC = function (id, span, exec) {
 
 // 新しいOHLCデータをDBへ挿入
 var insertToDB = function(db, ohlc) {
-	console.log('-> INSERT: ' + ohlc.data.id + '@' + ohlc.span);
+	console.log('[INSERT] ' + market + '_OHLC_' + ohlc.span + ' op_date:' + ohlc.data.op_date.toISOString());
 	var collection = db.collection(getCollectionName(ohlc.span));
 	collection.insertOne(ohlc.data);
 }
 
 // 既存のOHLCデータを更新
 var updateToDB = function(db, ohlc) {
-	console.log('-> UPDATE: ' + ohlc.data.id + '@' + ohlc.span);
+	//console.log('[UPDATE] ' + ohlc.data.id + '@' + ohlc.span);
 	var collection = db.collection(getCollectionName(ohlc.span));
 	collection.findOneAndUpdate({'id' : ohlc.data.id}, {$set : ohlc.data});
 }
@@ -183,6 +183,8 @@ MongoClient.connect(url, function(err, db) {
 
 	var collection = db.collection(market);
 
+	console.log('[START] ' + market);
+	
 	// 作成済みのOHLCデータをDBから読み込み
 	findFromDB(db, function() {
 
@@ -193,9 +195,9 @@ MongoClient.connect(url, function(err, db) {
 			var queue = [];
 
 			// 0.1秒毎に100件の約定データを処理
-			console.log('FIND: {execution_id:{$gte:' + after + '}}');
+			//console.log('FIND: {execution_id:{$gte:' + after + '}}');
 			collection.find({'id' : {'$gte' : after}}).sort([['id',1]]).limit(100).forEach(function (doc) {
-				console.log('[' + doc.id + '] ' + doc.exec_date);
+				//console.log('[' + doc.id + '] ' + doc.exec_date);
 				after = doc.id + 1;
 				count++;
 				for (var span in ohlcs) {
@@ -230,7 +232,7 @@ MongoClient.connect(url, function(err, db) {
 					setTimeout(next, 100, after);
 				} else {
 					// 最新の約定データに追いついた
-					console.log('no execution.');
+					//console.log('no execution.');
 					setTimeout(next, 1000, after);
 				}
 			});

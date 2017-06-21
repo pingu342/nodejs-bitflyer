@@ -25,6 +25,7 @@ var productCode = process.argv[2];
 
 var insertExecutionsToDB = function(db, exec, callback) {
 	
+	console.log('[INSERT] ' + market + ' id=' + exec[0].id + '~' + exec[exec.length-1].id + ' count=' + exec.length + ' exec_date=' +  exec[0].exec_date.toISOString());
 	var collection = db.collection(market);
 	collection.insertMany(exec, function(err, result) {
 		assert.equal(err, null);
@@ -51,7 +52,7 @@ var getExecutions = function(count, after, callback) {
 		query += '&after=' + (after-1) + '&before=' + (after + count);
 	}
 	
-	console.log(query);
+	//console.log(query);
 	
 	request('https://api.bitflyer.jp' + path + query, function (err, response, payload) {
 		try {
@@ -75,7 +76,7 @@ var getExecutionsPeridic = function(after, upper) {
 
 		if (res == null) {
 			// 取得失敗なら1秒後にリトライ
-			console.log('getExecutions error.');
+			console.log('[ERROR] getExecutions error.');
 			setTimeout(getExecutionsPeridic, 1000, after, upper);
 			return;
 		}
@@ -99,7 +100,6 @@ var getExecutionsPeridic = function(after, upper) {
 			if (after > res[i].id) {
 				continue;
 			}
-			console.log(' { id : ' + res[i].id + ', exec_date : ' + res[i].exec_date.toString() + ' }');
 			if (maxId < res[i].id) {
 				maxId = res[i].id;
 			}
@@ -133,11 +133,11 @@ var getExecutionsPeridic = function(after, upper) {
 					getExecutions(1, 0, function (res) {
 						if (res == null) {
 							// 取得失敗なら1秒後にリトライ
-							console.log('getExecutions error.');
+							console.log('[ERROR] getExecutions error.');
 							setTimeout(getLatestExec, 1000);
 							return;
 						}
-						console.log('after=' + after + ' upper=' + res[0].id);
+						//console.log('after=' + after + ' upper=' + res[0].id);
 						upper = res[0].id;
 						if (after <= upper) {
 							getExecutionsPeridic(after, upper);
@@ -183,14 +183,12 @@ MongoClient.connect(url, function(err, db) {
 			after = doc.id + 1;
 		}
 
-		console.log("after=" + after);
-
 		db.close();
 
 		// サーバ側で最新の約定データのidを取得する
 		getExecutions(1, 0, function (res) {
 
-			console.log('upper=' + res[0].id);
+			console.log('[START] ' + market + ' after=' + after);
 
 			// idがafter以上の約定データを取得する
 			getExecutionsPeridic(after, res[0].id);

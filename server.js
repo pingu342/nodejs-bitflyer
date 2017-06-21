@@ -49,7 +49,7 @@ var checkRequest = function(span) {
 	return false;
 }
 
-console.log('[LISTEN] port:' + Config.config.server_port);
+console.log((new Date) + '[LISTEN] port:' + Config.config.server_port);
 
 var io = require('socket.io')(Config.config.server_port);
 
@@ -58,12 +58,12 @@ var Server = function (market) {
 	var namespace = '/' + market + '_OHLC';
 
 	var ns = io.of(namespace).on('connection', function (socket) {
-		console.log('[CONN] ' + namespace);
+		console.log((new Date) + '[CONN] ' + namespace);
 
 		socket.on('req', function(obj){
 
 			// クライアントから要求を受信
-			console.log('[RECV REQ] ' + market + '_OHLC_' + obj.span + ' before:' + obj.before);
+			console.log((new Date) + '[RECV REQ] ' + market + '_OHLC_' + obj.span + ' before:' + obj.before);
 
 			if (checkRequest(obj.span)) {
 				sendOldOHLC(obj.span, obj.before, 100, socket);
@@ -73,29 +73,29 @@ var Server = function (market) {
 		socket.on('join', function(obj) {
 
 			// クライアントからJOINを受信
-			console.log('[RECV JOIN] ' + market + '_OHLC_' + obj.span);
+			console.log((new Date) + '[RECV JOIN] ' + market + '_OHLC_' + obj.span);
 
 			if (checkRequest(obj.span)) {
 				socket.join(obj.span);
 			} else {
-				console.log('[FAIL JOIN]');
+				console.log((new Date) + '[FAIL JOIN]');
 			}
 		});
 
 		socket.on('leave', function(obj) {
 
 			// クライアントからLEAVEを受信
-			console.log('[RECV LEAVE] ' + market + '_OHLC_' + obj.span);
+			console.log((new Date) + '[RECV LEAVE] ' + market + '_OHLC_' + obj.span);
 
 			if (checkRequest(obj.span)) {
 				socket.leave(obj.span);
 			} else {
-				console.log('[FAIL LEAVE]');
+				console.log((new Date) + '[FAIL LEAVE]');
 			}
 		});
 
 		socket.on('disconnect', function (socket) {
-			console.log('[DISCONN] ' + namespace);
+			console.log((new Date) + '[DISCONN] ' + namespace);
 		});
 
 	});
@@ -111,6 +111,7 @@ var Server = function (market) {
 			var collection = db.collection(getCollectionName(market, span));
 			var oldestId = Number.MAX_VALUE;
 
+			//console.log((new Date) + '[EMIT DAT] ' + market + '_OHLC_' + span + ' before=' + before);
 			collection.find({'id':{'$lt':before}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
 
 				// iteration callback
@@ -125,6 +126,7 @@ var Server = function (market) {
 
 				// end callback
 
+				//console.log((new Date) + '[EMIT RSP] ' + market + '_OHLC_' + span + ' before=' + before);
 				client.emit('rsp', {'span':span, 'before':before, 'after':(oldestId-1), 'msg':'Requested data was sent.'});
 				db.close();
 
@@ -143,6 +145,7 @@ var Server = function (market) {
 
 			var collection = db.collection(getCollectionName(market, span));
 
+			//console.log((new Date) + '[EMIT DAT] ' + market + '_OHLC_' + span + ' after=' + last.id);
 			collection.find({'id':{'$gte':last.id}}).sort([['id',1]]).forEach(function (doc) {
 
 				// iteration callback
@@ -195,7 +198,7 @@ var Server = function (market) {
 	//
 	this.start = function () {
 		for (var span in ohlcs) {
-			console.log('[START] ' + market + '_OHLC_' + span);
+			console.log((new Date) + ' [START] ' + market + '_OHLC_' + span);
 			sendLatestOHLC(span);
 		}
 	}
@@ -203,5 +206,5 @@ var Server = function (market) {
 	return this;
 }
 
-Server('BTC_JPY').start();
+//Server('BTC_JPY').start();
 Server('FX_BTC_JPY').start();
