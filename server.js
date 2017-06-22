@@ -56,6 +56,7 @@ var io = require('socket.io')(Config.config.server_port);
 var Server = function (market) {
 
 	var namespace = '/' + market + '_OHLC';
+	var database = null;
 
 	var ns = io.of(namespace).on('connection', function (socket) {
 		console.log((new Date).toISOString() + '[CONN] ' + namespace);
@@ -105,32 +106,26 @@ var Server = function (market) {
 	//
 	var sendOldOHLC = function(span, before, limit, client) {
 
-		MongoClient.connect(url, function(err, db) {
-			assert.equal(null, err);
+		var collection = database.collection(getCollectionName(market, span));
+		var oldestId = Number.MAX_VALUE;
 
-			var collection = db.collection(getCollectionName(market, span));
-			var oldestId = Number.MAX_VALUE;
+		//console.log((new Date).toISOString() + '[EMIT DAT] ' + market + '_OHLC_' + span + ' before=' + before);
+		collection.find({'id':{'$lt':before}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
 
-			//console.log((new Date).toISOString() + '[EMIT DAT] ' + market + '_OHLC_' + span + ' before=' + before);
-			collection.find({'id':{'$lt':before}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
+			// iteration callback
 
-				// iteration callback
+			client.emit(span, doc);
 
-				client.emit(span, doc);
+			if (oldestId > doc.id) {
+				oldestId = doc.id;
+			}
 
-				if (oldestId > doc.id) {
-					oldestId = doc.id;
-				}
+		}, function (err) {
 
-			}, function (err) {
+			// end callback
 
-				// end callback
-
-				//console.log((new Date).toISOString() + '[EMIT RSP] ' + market + '_OHLC_' + span + ' before=' + before);
-				client.emit('rsp', {'span':span, 'before':before, 'after':(oldestId-1), 'msg':'Requested data was sent.'});
-				db.close();
-
-			});
+			//console.log((new Date).toISOString() + '[EMIT RSP] ' + market + '_OHLC_' + span + ' before=' + before);
+			client.emit('rsp', {'span':span, 'before':before, 'after':(oldestId-1), 'msg':'Requested data was sent.'});
 
 		});
 	};
@@ -140,33 +135,27 @@ var Server = function (market) {
 	//
 	var sendUpdatedOHLC = function(span, last) {
 
-		MongoClient.connect(url, function(err, db) {
-			assert.equal(null, err);
+		var collection = database.collection(getCollectionName(market, span));
 
-			var collection = db.collection(getCollectionName(market, span));
+		//console.log((new Date).toISOString() + '[EMIT DAT] ' + market + '_OHLC_' + span + ' after=' + last.id);
+		collection.find({'id':{'$gte':last.id}}).sort([['id',1]]).forEach(function (doc) {
 
-			//console.log((new Date).toISOString() + '[EMIT DAT] ' + market + '_OHLC_' + span + ' after=' + last.id);
-			collection.find({'id':{'$gte':last.id}}).sort([['id',1]]).forEach(function (doc) {
+			// iteration callback
 
-				// iteration callback
+			//if (last.id == doc.id && last.close_exec_id == doc.close_exec_id) {
+			//	// 未更新なら送信不要
+			//	return;
+			//}
 
-				//if (last.id == doc.id && last.close_exec_id == doc.close_exec_id) {
-				//	// 未更新なら送信不要
-				//	return;
-				//}
+			ns.to(span).emit(span, doc);
 
-				ns.to(span).emit(span, doc);
+			last = doc;
 
-				last = doc;
+		}, function (err) {
 
-			}, function (err) {
+			// end callback
 
-				// end callback
-
-				setTimeout(sendUpdatedOHLC, 1000, span, last);
-				db.close();
-
-			});
+			setTimeout(sendUpdatedOHLC, 1000, span, last);
 
 		});
 	};
@@ -179,14 +168,16 @@ var Server = function (market) {
 		MongoClient.connect(url, function(err, db) {
 			assert.equal(null, err);
 
-			var collection = db.collection(getCollectionName(market, span));
+			// databaseのconnectionはなるべく使いまわす
+			database = db;
+
+			var collection = database.collection(getCollectionName(market, span));
 
 			collection.find().sort([['id',-1]]).limit(1).forEach(function (doc) {
 
 				ns.to(span).emit(span, doc);
 
 				setTimeout(sendUpdatedOHLC, 1000, span, doc);
-				db.close();
 
 			});
 

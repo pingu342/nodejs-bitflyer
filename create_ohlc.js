@@ -31,6 +31,7 @@ var ohlcs = {	'300'   : null, //5分足
 				'86400' : null  //24時間足
 };
 var execId = 1;
+var database = null;
 
 var getCollectionName = function(span) {
 	return market + '_OHLC_' + span;
@@ -128,21 +129,21 @@ var OHLC = function (id, span, exec) {
 }
 
 // 新しいOHLCデータをDBへ挿入
-var insertToDB = function(db, ohlc) {
+var insertToDB = function(ohlc) {
 	console.log('[INSERT] ' + market + '_OHLC_' + ohlc.span + ' op_date:' + ohlc.data.op_date.toISOString());
-	var collection = db.collection(getCollectionName(ohlc.span));
+	var collection = database.collection(getCollectionName(ohlc.span));
 	collection.insertOne(ohlc.data);
 }
 
 // 既存のOHLCデータを更新
-var updateToDB = function(db, ohlc) {
+var updateToDB = function(ohlc) {
 	//console.log('[UPDATE] ' + ohlc.data.id + '@' + ohlc.span);
-	var collection = db.collection(getCollectionName(ohlc.span));
+	var collection = database.collection(getCollectionName(ohlc.span));
 	collection.findOneAndUpdate({'id' : ohlc.data.id}, {$set : ohlc.data});
 }
 
 // DBからOHLCデータを読み込み
-var findFromDB = function(db, callback) {
+var findFromDB = function(callback) {
 
 	var keys = Object.keys(ohlcs);
 	var n = 0;
@@ -151,7 +152,7 @@ var findFromDB = function(db, callback) {
 	for (var span in ohlcs) {
 		(function (span) {
 			// DB内のコレクションは各スパン毎に分けている
-			var collection = db.collection(getCollectionName(span));
+			var collection = database.collection(getCollectionName(span));
 
 			// 各スパンの最新のOHLCデータを探す
 			collection.findOne({}, {limit:1, sort:[['id',-1]]}, function (err, doc) {
@@ -181,12 +182,15 @@ var findFromDB = function(db, callback) {
 MongoClient.connect(url, function(err, db) {
 	assert.equal(null, err);
 
-	var collection = db.collection(market);
+	// databaseのconnectionはなるべく使いまわす
+	database = db;
+
+	var collection = database.collection(market);
 
 	console.log('[START] ' + market);
 	
 	// 作成済みのOHLCデータをDBから読み込み
-	findFromDB(db, function() {
+	findFromDB(function() {
 
 		// 約定データを古いほうから1つずつ読んで、各スパンのOHLCデータをDBに作成していく
 		var next = function (after) {
@@ -223,10 +227,10 @@ MongoClient.connect(url, function(err, db) {
 						var ohlc = queue[i];
 						ohlc.inQueue = false;
 						if (ohlc.notyetInserted) {
-							insertToDB(db, ohlc);
+							insertToDB(ohlc);
 							ohlc.notyetInserted = false;
 						} else {
-							updateToDB(db, ohlc);
+							updateToDB(ohlc);
 						}
 					}
 					setTimeout(next, 100, after);

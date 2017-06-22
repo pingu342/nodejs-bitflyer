@@ -22,11 +22,12 @@ if (Config.config.mongo_user && Config.config.mongo_pwd) {
 }
 var market = 'lightning_executions_' + process.argv[2];
 var productCode = process.argv[2];
+var database = null;
 
-var insertExecutionsToDB = function(db, exec, callback) {
+var insertExecutionsToDB = function(exec, callback) {
 	
 	console.log('[INSERT] ' + market + ' id=' + exec[0].id + '~' + exec[exec.length-1].id + ' count=' + exec.length + ' exec_date=' +  exec[0].exec_date.toISOString());
-	var collection = db.collection(market);
+	var collection = database.collection(market);
 	collection.insertMany(exec, function(err, result) {
 		assert.equal(err, null);
 		callback(result);
@@ -157,13 +158,9 @@ var getExecutionsPeridic = function(after, upper) {
 		};
 
 		if (execs.length > 0) {
-			MongoClient.connect(url, function(err, db) {
-				assert.equal(null, err);
-				insertExecutionsToDB(db, execs, function(result) {
-					db.close();
-					process.nextTick(function() {
-						next();
-					});
+			insertExecutionsToDB(execs, function(result) {
+				process.nextTick(function() {
+					next();
 				});
 			});
 		} else {
@@ -175,7 +172,10 @@ var getExecutionsPeridic = function(after, upper) {
 MongoClient.connect(url, function(err, db) {
 	assert.equal(null, err);
 
-	var collection = db.collection(market);
+	// databaseのconnectionはなるべく使いまわす
+	database = db;
+
+	var collection = database.collection(market);
 
 	// コレクション内で最新の約定データを探す
 	collection.findOne({}, {limit:1, sort:[['id',-1]]}, function (err, doc) {
@@ -186,8 +186,6 @@ MongoClient.connect(url, function(err, db) {
 			// 続きのデータを取得する
 			after = doc.id + 1;
 		}
-
-		db.close();
 
 		// サーバ側で最新の約定データのidを取得する
 		process.nextTick(function() {
