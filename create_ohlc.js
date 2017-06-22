@@ -238,7 +238,9 @@ MongoClient.connect(url, function(err, db) {
 			});
 		};
 
-		next(execId);
+		process.nextTick(function() {
+			next(execId);
+		});
 
 	});
 });

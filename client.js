@@ -52,7 +52,7 @@ socket.on(span, function(data) {
 
 	// JOIN後の最初のイベントでは、JOIN時点でのサーバ側での最新データ(1件以上)を受信できる
 	// 以降は定期的に、前回受信したデータからの更新データ(1件以上)を受信できる
-	console.log('[RECV] ' + data.id + ' ' + data.open_date);
+	console.log('[RECV] ' + data.id + ' ' + data.op_date);
 
 	if (!requireOldData) {
 		return;

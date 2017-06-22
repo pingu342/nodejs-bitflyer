@@ -140,7 +140,9 @@ var getExecutionsPeridic = function(after, upper) {
 						//console.log('after=' + after + ' upper=' + res[0].id);
 						upper = res[0].id;
 						if (after <= upper) {
-							getExecutionsPeridic(after, upper);
+							process.nextTick(function() {
+								getExecutionsPeridic(after, upper);
+							});
 						} else {
 							setTimeout(getLatestExec, 1000);
 						}
@@ -159,7 +161,9 @@ var getExecutionsPeridic = function(after, upper) {
 				assert.equal(null, err);
 				insertExecutionsToDB(db, execs, function(result) {
 					db.close();
-					next();
+					process.nextTick(function() {
+						next();
+					});
 				});
 			});
 		} else {
@@ -186,12 +190,16 @@ MongoClient.connect(url, function(err, db) {
 		db.close();
 
 		// サーバ側で最新の約定データのidを取得する
-		getExecutions(1, 0, function (res) {
+		process.nextTick(function() {
+			getExecutions(1, 0, function (res) {
 
-			console.log('[START] ' + market + ' after=' + after);
+				console.log('[START] ' + market + ' after=' + after);
 
-			// idがafter以上の約定データを取得する
-			getExecutionsPeridic(after, res[0].id);
+				// idがafter以上の約定データを取得する
+				process.nextTick(function() {
+					getExecutionsPeridic(after, res[0].id);
+				});
+			});
 		});
 	});
 	
