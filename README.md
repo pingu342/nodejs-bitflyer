@@ -61,7 +61,7 @@ OHLCデータをSocketIOで配信します。
 ### 補足
 
 * メモリは2GBくらい必要っぽい。使っているのはほとんどmongodbだろう。
-* ストレージは、〜2017/5までのデータ記録に8GBが必要。
+* ストレージは、〜2017/6までのデータ記録に3GBが必要。
 
 
 ## 実行
@@ -158,17 +158,17 @@ BTC_JPYの約定データを見てみます。
 次にBTC_JPYのOHLCデータ(1時間足)を見てみます。
 
 	> db.lightning_executions_BTC_JPY_OHLC_3600.find()
-	{ "_id" : ObjectId("593cc26df8a789e90c1b687b"), "id" : 1, "open_price" : 30195, "high_price" : 30195, "low_price" : 30195, "close_price" : 30195, "volume_sell" : 0.01, "volume_buy" : 0, "open_date" : ISODate("2015-06-24T05:00:00Z"), "open_exec_id" : 1, "close_exec_id" : 1 }
+	{ "_id" : ObjectId("59492cf9f9cb006dfe16636c"), "id" : 1, "op" : 70570, "hi" : 70570, "lo" : 70494, "cl" : 70494, "vol_sell" : 0.1, "vol_buy" : 4.924977859999999, "op_date" : ISODate("2016-07-01T17:58:01.373Z"), "cl_date" : ISODate("2016-07-01T17:59:48.003Z"), "op_exec_id" : 2902453, "cl_exec_id" : 2902463 }
 
-* open_price : 始値
-* high_price : 上ヒゲ
-* low_price : 下ヒゲ
-* close_price : 終値
-* volume_sell : 出来高(売り)
-* volume_buy : 出来高(買い)
-* open_date : 日時
-* open_exec_id : 始値をつけた約定データのid
-* close_exec_id : 終値をつけた約定データのid
+* op : 始値
+* hi : 上ヒゲ
+* lo : 下ヒゲ
+* cl : 終値
+* vol_sell : 出来高(売り)
+* vol_buy : 出来高(買い)
+* op_date : 日時
+* op_exec_id : 始値をつけた約定データのid
+* cl_exec_id : 終値をつけた約定データのid
 
 # データのチェック
 
