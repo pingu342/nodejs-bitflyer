@@ -67,7 +67,7 @@ var Server = function (market) {
 			console.log((new Date).toISOString() + '[RECV REQ] ' + market + '_OHLC_' + obj.span + ' before:' + obj.before);
 
 			if (checkRequest(obj.span)) {
-				sendOldOHLC(obj.span, obj.before, 100, socket);
+				sendOldOHLC(obj.span, obj.before, 200, socket);
 			}
 		});
 
