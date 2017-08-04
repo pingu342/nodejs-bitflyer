@@ -9,6 +9,8 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	; // valid
 } else if (process.argv[2] === 'BTC_JPY') {
 	; // valid
+} else if (process.argv[2] === 'BCH_BTC') {
+	; // valid
 } else {
 	console.log('product code error.');
 	return; // invalid

@@ -93,12 +93,16 @@ OHLCデータをSocketIOで配信します。
 	* server_port : OHLCデータ配信サーバーのポート番号
 
 
-* dbを空っぽにする
+* dbを初期化する
 
-		$ node manage_db.js <product_code> dropAll
-		$ node manage_db.js <product_code> createIndex
+		$ node manage_db.js <product_code> <target> drop
+		$ node manage_db.js <product_code> <target> createIndex
 
-	`<product_code>`には`BTC_JPY`または`FX_BTC_JPY`を入れます。
+	`<product_code>`には`BTC_JPY`,`FX_BTC_JPY`,`BCH_BTC`を入れます。
+
+	`<target>`には`ALL`,`OHLC`を入れます。
+	`ALL`を指定すると、既存の約定データとOHLCデータがdbから消えます。
+	`OHLC`を指定すると、既存のOHLCデータがdbから消えます。約定データは消えません。
 
 * 実行
 

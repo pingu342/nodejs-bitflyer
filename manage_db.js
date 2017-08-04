@@ -9,6 +9,8 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	; // valid
 } else if (process.argv[2] === 'BTC_JPY') {
 	; // valid
+} else if (process.argv[2] === 'BCH_BTC') {
+	; // valid
 } else {
 	console.log('product code error.');
 	return; // invalid
@@ -19,7 +21,7 @@ if (process.argv[3] === 'ALL') {
 } else if (process.argv[3] === 'OHLC') {
 	; // valid
 } else {
-	console.log('range error.');
+	console.log('target error.');
 	return; // invalid
 }
 
