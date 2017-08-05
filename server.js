@@ -199,3 +199,4 @@ var Server = function (market) {
 
 Server('BTC_JPY').start();
 Server('FX_BTC_JPY').start();
+Server('BCH_BTC').start();

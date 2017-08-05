@@ -7,6 +7,8 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	; // valid
 } else if (process.argv[2] === 'BTC_JPY') {
 	; // valid
+} else if (process.argv[2] === 'BCH_BTC') {
+	; // valid
 } else {
 	console.log('product code error.');
 	return; // invalid
@@ -52,7 +54,7 @@ socket.on(span, function(data) {
 
 	// JOIN後の最初のイベントでは、JOIN時点でのサーバ側での最新データ(1件以上)を受信できる
 	// 以降は定期的に、前回受信したデータからの更新データ(1件以上)を受信できる
-	console.log('[RECV] ' + data.id + ' ' + data.op_date);
+	console.log('[RECV] ' + data.id + ' ' + data.op_date + ' ' + data.op);
 
 	if (!requireOldData) {
 		return;
