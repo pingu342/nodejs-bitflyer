@@ -111,7 +111,7 @@ var Server = function (market) {
 	var sendOldOHLC = function(span, before, after, limit, client) {
 
 		var collection = database.collection(getCollectionName(market, span));
-		var oldestId = Number.MAX_VALUE;
+		//var oldestId = Number.MAX_VALUE;
 
 		//console.log((new Date).toISOString() + '[EMIT DAT] ' + market + '_OHLC_' + span + ' before=' + before);
 		collection.find({'id':{'$lt':before, '$gt':after}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
@@ -120,16 +120,16 @@ var Server = function (market) {
 
 			client.emit(span, doc);
 
-			if (oldestId > doc.id) {
-				oldestId = doc.id;
-			}
+			//if (oldestId > doc.id) {
+			//	oldestId = doc.id;
+			//}
 
 		}, function (err) {
 
 			// end callback
 
-			//console.log((new Date).toISOString() + '[EMIT RSP] ' + market + '_OHLC_' + span + ' before=' + before);
-			client.emit('rsp', {'span':span, 'before':before, 'after':(oldestId-1), 'msg':'Requested data was sent.'});
+			console.log((new Date).toISOString() + '[SEND RSP] ' + market + '_OHLC_' + span + ' before:' + before + ' after:' + after);
+			client.emit('rsp', {'span':span, 'before':before, 'after':after, 'msg':'Requested data was sent.'});
 
 		});
 	};
