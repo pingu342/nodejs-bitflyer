@@ -64,10 +64,14 @@ var Server = function (market) {
 		socket.on('req', function(obj){
 
 			// クライアントから要求を受信
-			console.log((new Date).toISOString() + '[RECV REQ] ' + market + '_OHLC_' + obj.span + ' before:' + obj.before);
+			console.log((new Date).toISOString() + '[RECV REQ] ' + market + '_OHLC_' + obj.span + ' before:' + obj.before + ' after:' + obj.after);
 
 			if (checkRequest(obj.span)) {
-				sendOldOHLC(obj.span, obj.before, 200, socket);
+				var after = obj.after;
+				if (typeof after === "undefined") {
+					after = 0;
+				}
+				sendOldOHLC(obj.span, obj.before, after, 200, socket);
 			}
 		});
 
@@ -104,13 +108,13 @@ var Server = function (market) {
 	//
 	// idより前(idは含まない)の古い、span足のOHLCデータをlimit件だけ、clientへ送信
 	//
-	var sendOldOHLC = function(span, before, limit, client) {
+	var sendOldOHLC = function(span, before, after, limit, client) {
 
 		var collection = database.collection(getCollectionName(market, span));
 		var oldestId = Number.MAX_VALUE;
 
 		//console.log((new Date).toISOString() + '[EMIT DAT] ' + market + '_OHLC_' + span + ' before=' + before);
-		collection.find({'id':{'$lt':before}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
+		collection.find({'id':{'$lt':before, '$gt':after}}).sort([['id',-1]]).limit(limit).forEach(function (doc) {
 
 			// iteration callback
 

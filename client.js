@@ -72,7 +72,7 @@ socket.on(span, function(data) {
 		smallId = data.id;
 	}
 	console.log('[REQ] before:' + smallId);
-	socket.emit('req', {span:span, before:smallId});
+	socket.emit('req', {span:span, before:smallId, after:smallId-20});
 	requireOldData = false;
 });
 
