@@ -1,0 +1,5 @@
+mongo_host: "host"
+mongo_port: "27017"
+mongo_db: "db"
+mongo_user: "user"
+mongo_pwd: "password"
