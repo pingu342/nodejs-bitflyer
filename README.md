@@ -95,24 +95,36 @@ OHLCデータをSocketIOで配信します。
 
 * dbを初期化する
 
-		$ node manage_db.js <product_code> <target> drop
-		$ node manage_db.js <product_code> <target> createIndex
+	dbからコレクションを削除します。
 
-	`<product_code>`には`BTC_JPY`,`FX_BTC_JPY`,`ETH_BTC`,`BCH_BTC`を入れます。
+		$ node manage_db.js BTC_JPY ALL drop
+		$ node manage_db.js FX_BTC_JPY ALL drop
+		$ node manage_db.js ETH_BTC ALL drop
+		$ node manage_db.js BCH_BTC ALL drop
 
-	`<target>`には`ALL`,`OHLC`を入れます。
-	`ALL`を指定すると、既存の約定データとOHLCデータがdbから消えます。
-	`OHLC`を指定すると、既存のOHLCデータがdbから消えます。約定データは消えません。
+	dbに空のコレクションを作成し、アクセスを高速化するためのインデックスを作成します。
+
+		$ node manage_db.js BTC_JPY ALL createIndex
+		$ node manage_db.js FX_BTC_JPY ALL createIndex
+		$ node manage_db.js ETH_BTC ALL createIndex
+		$ node manage_db.js BCH_BTC ALL createIndex
+
 
 * 実行
 
 	約定データをダウンロードします。
 	
-		$ forever start download_exec.js <product_code>
+		$ forever start download_exec.js BTC_JPY
+		$ forever start download_exec.js FX_BTC_JPY
+		$ forever start download_exec.js ETH_BTC
+		$ forever start download_exec.js BCH_BTC
 	
 	OHLCデータを生成します。
 
-		$ forever start create_ohlc.js <product_code>
+		$ forever start create_ohlc.js BTC_JPY
+		$ forever start create_ohlc.js FX_BTC_JPY
+		$ forever start create_ohlc.js ETH_BTC
+		$ forever start create_ohlc.js BCH_BTC
 
 	DBが空っぽの場合は、最初の約定から順に処理します。現在に追いつくには2,3日かかります。
 
@@ -124,7 +136,10 @@ OHLCデータをSocketIOで配信します。
 
 	OHLCデータが正しく配信されているかを確認します。
 
-		$ node client.js <product_code> <span>
+		$ node client.js BTC_JPY <span>
+		$ node client.js FX_BTC_JPY <span>
+		$ node client.js ETH_BTC <span>
+		$ node client.js BCH_BTC <span>
 
 	`<span>`には、例えば5分足のOHLCデータを確認するなら`300`を入れます。
 	他には`900`,`1800`,`3600`,`21600`,`43200`,`86400`を入れることができます。
@@ -137,6 +152,8 @@ OHLCデータをSocketIOで配信します。
 
 
 # DB
+
+## コレクション
 
 	$ mongo
 
@@ -182,6 +199,30 @@ BTC_JPYの約定データを見てみます。
 * op_date : 日時
 * op_exec_id : 始値をつけた約定データのid
 * cl_exec_id : 終値をつけた約定データのid
+
+
+## コレクションの削除・初期化
+
+削除は次のスクリプトで行います。
+
+	$ node manage_db.js <product_code> <target> drop
+
+初期化は次のスクリプトで行います。これは空のコレクション作成と、アクセスを高速化するためのインデックス作成を行います。
+
+	$ node manage_db.js <product_code> <target> createIndex
+
+`<product_code>`には`BTC_JPY`,`FX_BTC_JPY`,`ETH_BTC`,`BCH_BTC`を入れます。
+
+`<target>`には`ALL`,`OHLC`を入れます。
+
+e.g.
+
+* `node manage_db.js BTC_JPY ALL drop`
+	* BTC_JPYの約定データ用とOHLCデータ用のコレクションがdbからすべて消えます。要注意。
+* `node manage_db.js BTC_JPY ALL createIndex`
+	* BTC_JPYの約定データ用とOHLCデータ用のコレクションをdbに作成し、インデックスを作成します。
+* `node manage_db.js BTC_JPY OHLC drop`
+	* BTC_JPYのOHLCデータ用のコレクションのみがdbから消えます。約定データ用のコレクションは消えません。
 
 # データのチェック
 
