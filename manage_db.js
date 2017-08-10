@@ -9,6 +9,8 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	; // valid
 } else if (process.argv[2] === 'BTC_JPY') {
 	; // valid
+} else if (process.argv[2] === 'ETH_BTC') {
+	; // valid
 } else if (process.argv[2] === 'BCH_BTC') {
 	; // valid
 } else {
@@ -59,52 +61,78 @@ if (process.argv[3] === 'ALL') {
 }
 var command = process.argv[4];
 
-if (command === 'drop') {
-
-	MongoClient.connect(url, function(err, db) {
-		assert.equal(null, err);
-
-		for (var i=skip, n=0, len=collections.length; i<len; i++) {
-			(function (name) {
-				var collection = db.collection(name);
-				collection.drop(function(err, result) {
-					if (err) {
-						console.log('db.' + name + '.drop()' + ' : ' + err.errmsg);
-					} else {
-						console.log('db.' + name + '.drop()' + ' : ' + result);
-					}
-					n++;
-					if (n == (collections.length - skip)) {
-						db.close();
-					}
-				});
-			})(collections[i].name);
-		}
-
-	});
-
-} else if (command === 'createIndex') {
-
-	MongoClient.connect(url, function(err, db) {
-		assert.equal(null, err);
-
-		for (var i=skip, n=0, len=collections.length; i<len; i++) {
-			(function (name, index) {
-				var collection = db.collection(name);
-				collection.createIndex(index, function(err, result) {
-					if (err) {
-						console.log('db.' + name + '.createIndex()' + ' : ' + err.errmsg);
-					} else {
-						console.log('db.' + name + '.createIndex()' + ' : ' + result);
-					}
-					n++;
-					if (n == (collections.length - skip)) {
-						db.close();
-					}
-				});
-			})(collections[i].name, collections[i].index);
-		}
-
-	});
-
+// 確認出力
+console.log('url: ' + url);
+console.log('command: ' + command)
+console.log('collections: ')
+for (var i=skip, n=0, len=collections.length; i<len; i++) {
+	console.log(' db.' + collections[i].name);
 }
+
+// 実行
+var runCommand = function() {
+	if (command === 'drop') {
+
+		MongoClient.connect(url, function(err, db) {
+			assert.equal(null, err);
+
+			for (var i=skip, n=0, len=collections.length; i<len; i++) {
+				(function (name) {
+					var collection = db.collection(name);
+					collection.drop(function(err, result) {
+						if (err) {
+							console.log(' db.' + name + '.drop()' + ' : ' + err.errmsg);
+						} else {
+							console.log(' db.' + name + '.drop()' + ' : ' + result);
+						}
+						n++;
+						if (n == (collections.length - skip)) {
+							db.close();
+						}
+					});
+				})(collections[i].name);
+			}
+
+		});
+
+	} else if (command === 'createIndex') {
+
+		MongoClient.connect(url, function(err, db) {
+			assert.equal(null, err);
+
+			for (var i=skip, n=0, len=collections.length; i<len; i++) {
+				(function (name, index) {
+					var collection = db.collection(name);
+					collection.createIndex(index, function(err, result) {
+						if (err) {
+							console.log(' db.' + name + '.createIndex()' + ' : ' + err.errmsg);
+						} else {
+							console.log(' db.' + name + '.createIndex()' + ' : ' + result);
+						}
+						n++;
+						if (n == (collections.length - skip)) {
+							db.close();
+						}
+					});
+				})(collections[i].name, collections[i].index);
+			}
+
+		});
+
+	}
+};
+
+var flag = true;
+console.log('are you ok? (y/n): ');
+process.stdin.resume();
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', function (chunk) {
+	str = chunk.slice(0, -1);
+	if (str === 'y' && flag) {
+		runCommand();
+		flag = false;
+	} else if (flag) {
+		console.log('bye!');
+		process.exit();
+	}
+});

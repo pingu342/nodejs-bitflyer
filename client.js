@@ -7,6 +7,8 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	; // valid
 } else if (process.argv[2] === 'BTC_JPY') {
 	; // valid
+} else if (process.argv[2] === 'ETH_BTC') {
+	; // valid
 } else if (process.argv[2] === 'BCH_BTC') {
 	; // valid
 } else {

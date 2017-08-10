@@ -5,7 +5,7 @@ Deliver OHLC data by SocketIO.
 
 ## 概要
 
-bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPY, BCH_BTCの約定データを取得してmongodbに保存します。
+bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPY, ETH_BTC, BCH_BTCの約定データを取得してmongodbに保存します。
 
 ローソク足チャート用のOHLCデータを作成してmongodbに保存します。
 
@@ -98,7 +98,7 @@ OHLCデータをSocketIOで配信します。
 		$ node manage_db.js <product_code> <target> drop
 		$ node manage_db.js <product_code> <target> createIndex
 
-	`<product_code>`には`BTC_JPY`,`FX_BTC_JPY`,`BCH_BTC`を入れます。
+	`<product_code>`には`BTC_JPY`,`FX_BTC_JPY`,`ETH_BTC`,`BCH_BTC`を入れます。
 
 	`<target>`には`ALL`,`OHLC`を入れます。
 	`ALL`を指定すると、既存の約定データとOHLCデータがdbから消えます。
@@ -157,7 +157,7 @@ OHLCデータをSocketIOで配信します。
 	lightning_executions_<product_code>_OHLC_43200
 	lightning_executions_<product_code>_OHLC_86400
 
-`<product_code>`には`BTC_JPY`,`FX_BTC_JPY`,`BCH_BTC`が入ります。
+`<product_code>`には`BTC_JPY`,`FX_BTC_JPY`,`ETH_BTC`,`BCH_BTC`が入ります。
 
 コレクションは上から順に、約定データ、OHLCデータ(5分足,15分足,...)です。
 
