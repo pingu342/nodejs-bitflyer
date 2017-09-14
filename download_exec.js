@@ -59,7 +59,12 @@ var getExecutions = function(count, after, callback) {
 	
 	//console.log(query);
 	
-	request('https://api.bitflyer.jp' + path + query, function (err, response, payload) {
+	request({
+		method: 'GET',
+		uri: 'https://api.bitflyer.jp' + path + query,
+		timeout: 5000
+	}, function (err, response, payload) {
+		//console.log(err);
 		try {
 			var json = JSON.parse(payload);
 			callback(json);
