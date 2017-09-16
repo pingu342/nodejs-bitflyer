@@ -1,20 +1,31 @@
 # nodejs-bitflyer
-Download bitflyer executions data and create OHLC data.
+Download bitFlyer lightning bitcoin market executions data and create OHLC data.
 
 Deliver OHLC data by SocketIO.
 
 ## 概要
 
-bitflyer lightning APIを使用してBTC_JPY, FX_BTC_JPY, ETH_BTC, BCH_BTCの約定データを取得してmongodbに保存します。
+bitFlyer lightning APIを使用してBTC_JPY, FX_BTC_JPY, ETH_BTC, BCH_BTCの約定データを取得してmongodbに保存します。
 
 ローソク足チャート用のOHLCデータを作成してmongodbに保存します。
 
 OHLCデータをSocketIOで配信します。
 
 
-## 実行環境
+## ハードウェア
+
+動作確認をしたハードウェアを示します。
 
 ### Macbook Pro (2016), macOS Sierra
+
+### Amazon Linux AMI
+
+* instance : t2.small
+* volume : 16 GiB
+
+## ソフトウェア
+
+動作確認をしたソフトウェアのバージョンを示します。
 
 * node -v
 	* v6.10.3
@@ -126,9 +137,11 @@ OHLCデータをSocketIOで配信します。
 		$ forever start create_ohlc.js ETH_BTC
 		$ forever start create_ohlc.js BCH_BTC
 
-	DBが空っぽの場合は、最初の約定から順に処理します。現在に追いつくには2,3日かかります。
+	DBが空っぽの場合は、最初の約定(id=1の約定データ)から順に処理します。
+	
+	現在に追いつくには2,3日かかります。
 
-	以前に実行されていて、DBに途中までのデータが残っている場合、そこから処理を再開します。
+	以前に実行されたことがありDBに途中までのデータが残っている場合、そこから処理を再開します。
 	
 	最後に、OHLCデータを配信します。
 
