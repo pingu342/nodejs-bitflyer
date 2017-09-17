@@ -3,6 +3,8 @@ Download bitFlyer lightning bitcoin market executions data and create OHLC data.
 
 Deliver OHLC data by SocketIO.
 
+Push remote notification to iOS app.
+
 ## 概要
 
 bitFlyer lightning APIを使用してBTC_JPY, FX_BTC_JPY, ETH_BTC, BCH_BTCの約定データを取得してmongodbに保存します。
@@ -10,6 +12,8 @@ bitFlyer lightning APIを使用してBTC_JPY, FX_BTC_JPY, ETH_BTC, BCH_BTCの約
 ローソク足チャート用のOHLCデータを作成してmongodbに保存します。
 
 OHLCデータをSocketIOで配信します。
+
+iOSアプリへリモート通知をプッシュします。
 
 
 ## ハードウェア
@@ -36,6 +40,7 @@ OHLCデータをSocketIOで配信します。
 * npm list
 
 		bitflyer@1.0.0
+		├── apn@2.1.5
 		├── config@1.26.1
 		├── forever@0.15.3
 		├── js-yaml@3.8.4
@@ -162,6 +167,54 @@ OHLCデータをSocketIOで配信します。
 		$ forever stopall
 
 	停止しても再開できますのでご安心を。
+
+
+# Push remote notification to iOS app.
+
+価格が閾値を超えて上昇または下落したときにiOSアプリへ通知します。
+
+その仕組みは以下の通りです。
+
+* 通知サーバー`notification_server.js`が、iOSアプリからリクエスト(例; 価格がこの閾値を超えて上昇したら通知くれ)を受け付けます。
+* 通知サーバーが価格を監視します。
+* 価格が閾値を超えたらiOSアプリへ通知します。(通知サーバーがappleのAPNsに通知を依頼します)
+
+現状、FX_BTC_JPYのみ対応です。
+
+APNsとの通信には専用のクライアント証明書と秘密鍵が必要です。
+その作成方法はappleのリファレンスをお読みください。
+
+通知サーバーの設定をconfigファイルに追加します。
+
+	$ vim config/default.yaml
+
+* notification
+	* server_port : 通知サーバーのポート番号
+	* pfx_file : APNsと通信するためのクライアント証明書と秘密鍵の.p12ファイル
+	* pfx_passphrase : 暗号化されているpfx_fileを復号するためのパスフレーズ
+
+通知サーバーを起動します。
+
+	$ forever start notification_server.js
+
+iOSアプリの開発方法は説明を省きます。
+
+iOSアプリから通知サーバーにリクエストするには、`http://<server>:<port>/subscribe`宛に、以下の書式のjsonデータを送信します。
+
+	{
+		deviceToken: '123456789ABCDEF...'
+		price: 100000,
+		market: 'FX_BTC_JPY',
+		direction: 'rise'
+	}
+
+`deviceToken`についてはappleのリファレンスをお読みください。
+
+`price`は閾値です。
+
+`market`は`FX_BTC_JPY`のみ対応です。
+
+`direction`は`rise`または`fall`です。`rise`は閾値を超えて上昇、`fall`は下落を示します。
 
 
 # DB
