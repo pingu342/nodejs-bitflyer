@@ -5,3 +5,8 @@ config:
     mongo_user: "username"
     mongo_pwd: "password"
     server_port: 8080
+    notification:
+        server_port: 8888
+        pfx_file: 'apns.p12'
+        pfx_passphrase: 'passphrase'
+
