@@ -11,31 +11,62 @@ var subscriptionList = [];
 //
 // サブスクリプションを追加
 //
-var addSubscription = function(json) {
+var addSub = function(json) {
+	// 重複禁止
+	var length = subscriptionList.length;
+	for(let i = 0; i < length; i++) {
+		var sub = subscriptionList[i];
+		if (sub.deviceToken === json.deviceToken &&
+			sub.price === json.price &&
+			sub.market === json.market) {
+			return false;
+		}
+	}
 	console.log('[*] new subscription:');
-	console.log(json.deviceToken);
+	console.log(json);
 	subscriptionList.push(json);
 	return true;
 }
 
 //
-// 通知すべきサブスクリプションを取得
+// サブスクリプションを削除
 //
-var getSubscription = function(oldPrice, newPrice) {
-	for(let i = 0; i < subscriptionList.length; i++) {
-		if (subscriptionList[i].direction === 'fall') {
-			if (subscriptionList[i].price < oldPrice &&
-				subscriptionList[i].price >= newPrice) {
-				return i;
-			}
-		} else if (subscriptionList[i].direction === 'rise') {
-			if (subscriptionList[i].price > oldPrice &&
-				subscriptionList[i].price <= newPrice) {
-				return i;
-			}
+var deleteSub = function(json) {
+	var length = subscriptionList.length;
+	for(let i = 0; i < length;) {
+		var sub = subscriptionList[i];
+		if (sub.deviceToken === json.deviceToken) {
+			console.log('[*] delete subscription:');
+			console.log(sub);
+			subscriptionList.splice(i, 1);
+			length--;
+		} else {
+			i++;
 		}
 	}
-	return -1;
+	return true;
+}
+
+//
+// Pushすべき通知を取得
+//
+var getNotification = function(next, oldPrice, newPrice) {
+	var notifi = null;
+	for(let i = next; i < subscriptionList.length; i++) {
+		var sub = subscriptionList[i];
+		if (sub.price < oldPrice && sub.price >= newPrice) {
+			// fall
+			notifi = {sub: sub, dire: 'fall', next: i};
+			subscriptionList.splice(i, 1);
+			break;
+		} else if (sub.price > oldPrice && sub.price <= newPrice) {
+			// rise
+			notifi = {sub: sub, dire: 'rise', next: i};
+			subscriptionList.splice(i, 1);
+			break;
+		}
+	}
+	return notifi;
 }
 
 //
@@ -48,7 +79,17 @@ server.on('request', function(req, res) {
 	if (req.url === '/subscribe' && req.method === 'POST') {
 		req.on('data', function(chunk) {
 			var json = JSON.parse(chunk);
-			addSubscription(json);
+			addSub(json);
+		});
+		req.on('end', function() {
+			res.writeHead(200);
+			res.end();
+		});
+		return;
+	} else if (req.url === '/unsubscribe' && req.method === 'POST') {
+		req.on('data', function(chunk) {
+			var json = JSON.parse(chunk);
+			deleteSub(json);
 		});
 		req.on('end', function() {
 			res.writeHead(200);
@@ -75,14 +116,20 @@ var options = {
 };
 var apnProvider = new apn.Provider(options);
 
-var pushNotification = function(sub) {
+var pushNotification = function(notifi) {
+	var sub = notifi.sub;
+	var dire = notifi.dire;
+
+	console.log('[*] push ' + dire + ' notification:');
+	console.log(sub);
+
 	var deviceToken = sub.deviceToken;
 	var note = new apn.Notification();
 	note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now. 
 	note.badge = 1;
 	note.sound = "ping.aiff";
-	if (sub.direction === 'rise') {
-		note.alert = "Price rose to " + sub.price + ".";
+	if (dire === 'rise') {
+		note.alert = sub.market + ": Price rose to " + sub.price + ".";
 	} else {
 		note.alert = "Price fell to " + sub.price + ".";
 	}
@@ -117,12 +164,14 @@ MongoClient.connect(url, function(err, db) {
 
 		collection.find({'id':{'$gte':lastExec.id}}).sort([['id',1]]).forEach(function (exec) {
 
-			var i = getSubscription(lastExec.price, exec.price);
-			if (i >= 0) {
-				console.log('[*] fire subscription:');
-				console.log(subscriptionList[i]);
-				pushNotification(subscriptionList[i]);
-				subscriptionList.splice(i, 1);
+			var next = 0;
+			for (;;) {
+				var notifi = getNotification(next, lastExec.price, exec.price);
+				if (notifi == null) {
+					break;
+				}
+				pushNotification(notifi);
+				next = notifi.next;
 			}
 
 			//console.log(lastExec.price + '->' + exec.price);
