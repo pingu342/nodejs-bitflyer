@@ -6,7 +6,49 @@ var http = require('http');
 var qs = require('qs');
 var server = http.createServer();
 var port = Config.config.notification.server_port;
+var userList = [];
 var subscriptionList = [];
+
+//
+// ユーザーを取得
+//
+var getUser = function(uid) {
+	var length = userList.length;
+	for (let i = 0; i < length; i++) {
+		var user = userList[i];
+		if (user.uid === uid) {
+			return user;
+		}
+	}
+	return null;
+}
+
+//
+// ユーザーを追加
+//
+var addUser = function(json) {
+	var user = getUser(json.uid);
+	if (user) {
+		var length = user.deviceToken;
+		for (let i = 0; i < length; i++) {
+			if (user.deviceToken[i] === json.deviceToken) {
+				return false;
+			}
+		}
+		user.deviceToken.push(json.deviceToken);
+		console.log('[*] new device:');
+		console.log(user);
+		return true;
+	}
+	console.log('[*] new user:');
+	var user = {
+		uid: json.uid,
+		deviceToken: [json.deviceToken]
+	};
+	console.log(user);
+	userList.push(user);
+	return true;
+}
 
 //
 // サブスクリプションを追加
@@ -16,7 +58,7 @@ var addSub = function(json) {
 	var length = subscriptionList.length;
 	for(let i = 0; i < length; i++) {
 		var sub = subscriptionList[i];
-		if (sub.deviceToken === json.deviceToken &&
+		if (sub.uid === json.uid &&
 			sub.price === json.price &&
 			sub.market === json.market) {
 			return false;
@@ -35,7 +77,7 @@ var deleteSub = function(json) {
 	var length = subscriptionList.length;
 	for(let i = 0; i < length;) {
 		var sub = subscriptionList[i];
-		if (sub.deviceToken === json.deviceToken) {
+		if (sub.uid === json.uid) {
 			console.log('[*] delete subscription:');
 			console.log(sub);
 			subscriptionList.splice(i, 1);
@@ -70,13 +112,23 @@ var getNotification = function(next, oldPrice, newPrice) {
 }
 
 //
-// iOSアプリからサブスクリプションを受け付ける
+// iOSアプリからリクエストを受け付ける
 //
 server.on('request', function(req, res) {
 	
 	//console.log('Recieve request for ' + req.url);
 
-	if (req.url === '/subscribe' && req.method === 'POST') {
+	if (req.url === '/login' && req.method === 'POST') {
+		req.on('data', function(chunk) {
+			var json = JSON.parse(chunk);
+			addUser(json);
+		});
+		req.on('end', function() {
+			res.writeHead(200);
+			res.end();
+		});
+		return;
+	} else if (req.url === '/subscribe' && req.method === 'POST') {
 		req.on('data', function(chunk) {
 			var json = JSON.parse(chunk);
 			addSub(json);
@@ -117,26 +169,32 @@ var options = {
 var apnProvider = new apn.Provider(options);
 
 var pushNotification = function(notifi) {
+	var user = getUser(notifi.sub.uid);
 	var sub = notifi.sub;
 	var dire = notifi.dire;
 
-	console.log('[*] push ' + dire + ' notification:');
+	console.log('[*] push notification:');
+	console.log(dire);
+	console.log(user);
 	console.log(sub);
 
-	var deviceToken = sub.deviceToken;
-	var note = new apn.Notification();
-	note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now. 
-	note.badge = 1;
-	note.sound = "ping.aiff";
-	if (dire === 'rise') {
-		note.alert = sub.market + ": Price rose to " + sub.price + ".";
-	} else {
-		note.alert = "Price fell to " + sub.price + ".";
+	var length = user.deviceToken.length;
+	for (let i = 0; i < length; i++) {
+		var deviceToken = user.deviceToken[i];
+		var note = new apn.Notification();
+		note.expiry = Math.floor(Date.now() / 1000) + 3600; // Expires 1 hour from now. 
+		note.badge = 1;
+		note.sound = "ping.aiff";
+		if (dire === 'rise') {
+			note.alert = sub.market + ": Price rose to " + sub.price + ".";
+		} else {
+			note.alert = sub.market + ": Price fell to " + sub.price + ".";
+		}
+		apnProvider.send(note, deviceToken).then( (result) => {
+			// see documentation for an explanation of result 
+			console.log(result);
+		});
 	}
-	apnProvider.send(note, deviceToken).then( (result) => {
-		// see documentation for an explanation of result 
-		console.log(result);
-	});
 }
 
 //
