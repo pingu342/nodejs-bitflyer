@@ -29,7 +29,7 @@ var getUser = function(uid) {
 var addUser = function(json) {
 	var user = getUser(json.uid);
 	if (user) {
-		var length = user.deviceToken;
+		var length = user.deviceToken.length;
 		for (let i = 0; i < length; i++) {
 			if (user.deviceToken[i] === json.deviceToken) {
 				return false;
