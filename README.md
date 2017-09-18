@@ -206,7 +206,9 @@ iOSアプリの開発方法は説明を省きます。
 		uid: 'userid',
 	}
 
-iOSアプリはappleから`deviceToken`を取得しておく必要がありますが、これについてはappleのリファレンスをお読みください。
+`deviceToken`はappleから取得します。これについてはappleのリファレンスをお読みください。
+
+`uid`にはユーザー名など、ユーザーを識別するための文字列を指定します。
 
 続いて、通知をリクエストするには、`http://<server>:<port>/subscribe`宛に、以下の書式のjsonデータを送信します。
 
@@ -223,7 +225,7 @@ iOSアプリはappleから`deviceToken`を取得しておく必要がありま�
 価格が閾値を超えて上昇または下落したとき、`uid`に紐づく`deviceToken`すべてに通知します。
 
 
-# DB
+# MongoDB
 
 ## コレクション
 
