@@ -1,14 +1,17 @@
 //
 // OHLCデータの配信サーバー
 //
-// OHLCデータの足の長さ(span)ごとにroomを提供
-// roomにJOINしたクライアントに対して、
-//  - JOIN時点での最新のOHLCデータを配信
-//  - 以降は定期的に、前回送信したデータからの更新データを配信
-// 
-// またクライアントからの要求に応じて過去のOHLCデータを配信
+// マーケット(BTC_JPY,FX_BTC_JPY,ETH_BTC,BCH_BTC)毎にnamespaceを公開
 //
-// また過去1分間の出来高を配信
+// 各namespaceは、OHLCデータの足の長さ(span)ごとにroom(OHLC_300,OHLC_1500,...)を提供
+//
+// クライアントはnamespaceにconnectし、roomにjoinする
+// roomにjoinしたクライアントに対して、最新のOHLCデータを定期的に配信
+// 
+// またクライアントからの要求(req)に応じて過去のOHLCデータを配信
+//
+// また各namespaceは、出来高のroom(volume_60)を提供
+// roomにjoinしたクライアントに対して、過去1分間の出来高情報を定期的に配信
 //
 var Config = require('config');
 
@@ -209,10 +212,8 @@ var Server = function (market) {
 
 			var collection = database.collection(getCollectionName(market, span));
 
-			// lastより新しいspan足のOHLCデータすべてを送信
-			var sendUpdatedOHLC = function(span, last) {
-
-				var collection = database.collection(getCollectionName(market, span));
+			// lastと、lastより新しいOHLCデータをすべて送信
+			var sendUpdatedOHLC = function(last) {
 
 				//console.log((new Date).toISOString() + '[EMIT DAT] ' + market + '_' + span + ' after=' + last.id);
 				collection.find({'id':{'$gte':last.id}}).sort([['id',1]]).forEach(function (doc) {
@@ -237,10 +238,12 @@ var Server = function (market) {
 				});
 			};
 
+			// 最初、最新のOHLCデータを1つだけ配信
 			collection.find().sort([['id',-1]]).limit(1).forEach(function (doc) {
 
 				ns.to('OHLC_' + span).emit('OHLC_' + span, doc);
 
+				// 以降、更新されたOHLCデータを定期的に配信
 				setTimeout(sendUpdatedOHLC, 1000, span, doc);
 
 			});
@@ -265,18 +268,25 @@ var Server = function (market) {
 			var checkExec = function() {
 				
 				var execNum = 0;
+				var sell = 0;
+				var buy = 0;
 
 				collection.find({'id':{'$gt':lastExec.id}}).sort([['id',1]]).forEach(function (exec) {
 					
 					execNum++;
 					volume.pushExec(exec);
+					if (exec.side == 'SELL') {
+						sell += exec.size;
+					} else {
+						buy += exec.size;
+					}
 					lastExec = exec;
 
 				}, function (err) {
 
 					var result = volume.checkExec();
 					if (/*execNum > 0 || result*/true) {
-						ns.to('volume_' + span).emit('volume_' + span, {sell: volume.sell, buy: volume.buy});
+						ns.to('volume_' + span).emit('volume_' + span, {sell: volume.sell, buy: volume.buy, recent_sell: sell, recent_buy: buy});
 					}
 
 					// 新しい約定データを1秒後に確認
@@ -284,13 +294,13 @@ var Server = function (market) {
 				});
 			};
 
-			// 最新の約定データを1つだけ取得
+			// 最初、最新の約定データを1つだけ確認
 			collection.find().sort([['id',-1]]).limit(1).forEach(function (exec) {
 
 				volume.pushExec(exec);
 				lastExec = exec;
 
-				// 新しい約定データを1秒後に確認
+				// 以降、新しい約定データを定期的に確認
 				setTimeout(checkExec, 1000);
 			});
 
