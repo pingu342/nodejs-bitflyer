@@ -244,7 +244,7 @@ var Server = function (market) {
 				ns.to('OHLC_' + span).emit('OHLC_' + span, doc);
 
 				// 以降、更新されたOHLCデータを定期的に配信
-				setTimeout(sendUpdatedOHLC, 1000, span, doc);
+				setTimeout(sendUpdatedOHLC, 1000, doc);
 
 			});
 
