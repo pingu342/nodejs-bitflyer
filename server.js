@@ -233,7 +233,7 @@ var Server = function (market) {
 
 					// end callback
 
-					setTimeout(sendUpdatedOHLC, 1000, span, last);
+					setTimeout(sendUpdatedOHLC, 1000, last);
 
 				});
 			};
