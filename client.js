@@ -16,17 +16,17 @@ if (process.argv[2] === 'FX_BTC_JPY') {
 	return; // invalid
 }
 
-var ohlcs = {	'300'   : null, //5分足
-				'900'   : null, //15分足
-				'1800'  : null, //30分足
-				'3600'  : null, //1時間足
-				'21600' : null, //6時間足
-				'43200' : null, //12時間足
-				'86400' : null  //24時間足
+var ohlcspan = {	'300'   : null, //5分足
+					'900'   : null, //15分足
+					'1800'  : null, //30分足
+					'3600'  : null, //1時間足
+					'21600' : null, //6時間足
+					'43200' : null, //12時間足
+					'86400' : null  //24時間足
 };
 
 var span = null;
-for (var key in ohlcs) {
+for (var key in ohlcspan) {
 	if (key === String(process.argv[3])) {
 		span = key;
 	}
@@ -38,7 +38,7 @@ if (!span) {
 }
 
 var market = process.argv[2];
-var namespace = '/' + market + '_OHLC';
+var namespace = '/' + market;
 var requireOldData = true;
 //var server_url = 'http://ec2-54-250-245-71.ap-northeast-1.compute.amazonaws.com:' + Config.config.server_port + namespace;
 var server_url = 'http://localhost:' + Config.config.server_port + namespace;
@@ -48,11 +48,14 @@ console.log('[CONN] ' + server_url);
 
 socket.on('connect', function() {
 
-	console.log('[JOIN] ' + span);
-	socket.emit('join', {span:span});
+	console.log('[JOIN] OHLC_' + span);
+	socket.emit('join', {type:'OHLC', span:span});
+
+	console.log('[JOIN] volume_60');
+	socket.emit('join', {type:'volume', span:60});
 });
 
-socket.on(span, function(data) {
+socket.on('OHLC_' + span, function(data) {
 
 	// JOIN後の最初のイベントでは、JOIN時点でのサーバ側での最新データ(1件以上)を受信できる
 	// 以降は定期的に、前回受信したデータからの更新データ(1件以上)を受信できる
@@ -74,8 +77,13 @@ socket.on(span, function(data) {
 		smallId = data.id;
 	}
 	console.log('[REQ] before:' + smallId);
-	socket.emit('req', {span:span, before:smallId, after:smallId-20});
+	socket.emit('req', {type:'OHLC', span:span, before:smallId, after:smallId-20});
 	requireOldData = false;
+});
+
+socket.on('volume_60', function(data) {
+
+	console.log('[RECV] sell:' + data.sell + ' buy: ' + data.buy);
 });
 
 socket.on('rsp', function(data) {
