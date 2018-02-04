@@ -40,7 +40,7 @@ if (!span) {
 var market = process.argv[2];
 var namespace = '/' + market;
 var requireOldData = true;
-var server_url = 'http://localhost:' + Config.config.server_port + namespace;
+var server_url = 'http://' + Config.config.server_host + ':' + Config.config.server_port + namespace;
 var socket = require('socket.io-client')(server_url);
 
 console.log('[CONN] ' + server_url);
