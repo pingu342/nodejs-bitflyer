@@ -4,6 +4,7 @@ config:
     mongo_db: "dbname"
     mongo_user: "username"
     mongo_pwd: "password"
+    server_host: "localhost"
     server_port: 8080
     notification:
         server_port: 8888
