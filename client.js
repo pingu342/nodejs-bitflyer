@@ -40,7 +40,6 @@ if (!span) {
 var market = process.argv[2];
 var namespace = '/' + market;
 var requireOldData = true;
-//var server_url = 'http://ec2-54-250-245-71.ap-northeast-1.compute.amazonaws.com:' + Config.config.server_port + namespace;
 var server_url = 'http://localhost:' + Config.config.server_port + namespace;
 var socket = require('socket.io-client')(server_url);
 
@@ -48,24 +47,26 @@ console.log('[CONN] ' + server_url);
 
 socket.on('connect', function() {
 
+	// OHLCデータの配信を要求
 	console.log('[JOIN] OHLC_' + span);
 	socket.emit('join', {type:'OHLC', span:span});
 
+	// 1分間出来高の配信を要求
 	console.log('[JOIN] volume_60');
 	socket.emit('join', {type:'volume', span:60});
 });
 
 socket.on('OHLC_' + span, function(data) {
 
-	// JOIN後の最初のイベントでは、JOIN時点でのサーバ側での最新データ(1件以上)を受信できる
-	// 以降は定期的に、前回受信したデータからの更新データ(1件以上)を受信できる
+	// OHLCデータ配信を要求後、最初にサーバから配信されるOHCLデータは1件で、それはサーバ側のその時点での最新のOHLCデータ
+	// 以降は定期的に、新しいOHLCデータが配信される
 	console.log('[RECV] ' + data.id + ' ' + data.cl_date + ' ' + data.cl);
 
 	if (!requireOldData) {
 		return;
 	}
 
-	// 過去のOHLCデータをサーバへ要求
+	// 過去のOHLCデータ20件をサーバへ要求
 	var smallId = Number.MAX_VALUE;
 	if (Array.isArray(data)) {
 		for (var doc in data) {
